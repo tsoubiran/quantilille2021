@@ -1,0 +1,1 @@
+Dépôt du module [Cartographie](https://ceraps.univ-lille.fr/quantilille/quantilille/programme/#m2) de [l’École d'été méthodes quantitatives en sciences sociales](https://ceraps.univ-lille.fr/quantilille/) 2021.
