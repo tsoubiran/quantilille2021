@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Exercices introduction géomatique</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+</head>
+<body>
+<h1 id="atelier-introduction-à-la-géomatique---exercices-de-manipulation">Atelier “Introduction à la géomatique” - Exercices de manipulation</h1>
+<p>tous ces exercices ont pour fonction d’appliquer pratiquement les principes généraux de la géomatique présentés dans l’atelier “Introduction à la géomatique” de manière théorique. Ces exercices se feront avec le logiciel de SIG Libre Quantum GIS (QGIS), version 3.16(.7).</p>
+<p>Lien vers le téléchargement de QGIS : <a href="https://qgis.org/fr/site/forusers/download.html" class="uri">https://qgis.org/fr/site/forusers/download.html</a> : Choisir “Installeurs autonomes pour les progiciels OSGeo4W” (Windows) ou “Paquetages officiels authentifiés tout-en-un” (Mac), puis Version long terme (la plus stable).</p>
+<div style="text-align:center">
+<img src="images/Capture_exo_telechargement.PNG" width="1536" alt="Capture d'écran pour le téléchargement de QGIS 3.16.7 pour Windows"/>
+</div>
+<h2 id="exercice-de-manipulation-1-système-de-coordonnées-de-référence-scr-dans-le-logiciel-de-sig-qgis">Exercice de manipulation 1 : Système de coordonnées de référence (SCR) dans le logiciel de SIG QGIS</h2>
+<h3 id="ouvrir-qgis">Ouvrir QGIS</h3>
+<h3 id="ouvrir-des-données-géographiques-dans-qgis">Ouvrir des données géographiques dans QGIS</h3>
+<p>Télécharger des données depuis deux sites institutionnels et un site académique :</p>
+<ul>
+<li>Télécharger les départements GEOFLA de 2016 depuis le site de l’IGN : Pour information, lien vers la page de téléchargement de toutes les données libres de l’IGN : <a href="https://geoservices.ign.fr/documentation/diffusion/telechargement-donnees-libres.html" class="uri">https://geoservices.ign.fr/documentation/diffusion/telechargement-donnees-libres.html</a> <strong><em>Lien vers le téléchargement des départements de France métropolitaine, 2016 : <a href="ftp://Admin_Express_ext:Dahnoh0eigheeFok@ftp3.ign.fr/GEOFLA_2-2_DEPARTEMENT_SHP_LAMB93_FXX_2016-06-28.7z" class="uri">ftp://Admin_Express_ext:Dahnoh0eigheeFok@ftp3.ign.fr/GEOFLA_2-2_DEPARTEMENT_SHP_LAMB93_FXX_2016-06-28.7z</a></em></strong></li>
+<li>Télécharger les contours des pays du monde depuis la GADM (Database of Global Administrative Areas) mis à disposition par le département de biogéographie de l’Université de Californie à Berkeley. : Pour information, lien vers la page de téléchargement des données à l’échelle mondiale : <a href="https://www.gadm.org/download_world.html" class="uri">https://www.gadm.org/download_world.html</a>. <strong><em>Lien vers le téléchargement des données : <a href="https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_shp.zip" class="uri">https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_shp.zip</a></em></strong></li>
+<li>Télécharger les contours des états états-uniens depuis le site du United States Census Bureau: Pour information, lien vers la page de téléchargement des données géographiques de limites administratives étatsuniennes: <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html" class="uri">https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html</a> <strong><em>Lien vers le téléchargement des données géographiques des états, 2018 : <a href="https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip" class="uri">https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip</a></em></strong></li>
+</ul>
+<p>Extraire les fichiers téléchargés des dossiers compressés. Les mettre dans un dossier consacré aux exercices du TP.</p>
+<p>Charger dans QGIS les données dans cet ordre, comme indiqué sur l’image ci-dessous : <em>la couche de données gadm36_0 du GADM dans QGIS ; </em>puis celle du United States Census Bureau (dites Ok à la fenêtre qui s’ouvre, nous y reviendront); *puis la couche DEPARTEMENT de l’IGN (chemin vers les données à partir du dossier extrait : GEOFLA_2-2_DEPARTEMENT_SHP_LAMB93_FXX_2016-06-28\1_DONNEES_LIVRAISON_2021-02-00129_2-2_SHP_LAMB93_FR-ED161). <img src="images/capture_gestionnaire_de_couche.png" title="Capture d&#39;écran pour l&#39;intégration de couche dans le logiciel de SIG QGIS" alt="Capture d’écran pour l’intégration de couche dans le logiciel de SIG QGIS" /></p>
+<p><strong><em>Remarque : pour ouvrir ces couches de données, il faut sélectionner à partir du gestionnaire des sources de données les fichiers avec l’extension .shp. Nous y reviendront.</em></strong></p>
+<p>***Point sur l’interface d’un SIG :</p>
+<p><img src="images/capture_interface_SIG.png" title="Capture d&#39;écran de l&#39;interface du logiciel de SIG QGIS" alt="Capture d’écran de l’interface du logiciel de SIG QGIS" />***</p>
+<p>Rouvrez un projet vide puis charger de nouveau les données, mais cette fois dans l’ordre inverse : que constatez-vous ? A votre avis pourquoi ?</p>
+<h3 id="repérer-le-scr-des-couches-du-projet">Repérer le SCR des couches / du projet</h3>
+<p>Pour comprendre ce phénomène, nous allons explorer les SCR associés aux différentes couches de données et celles associées au projet QGIS. Dans un logiciel de SIG, il y a deux niveaux où est défini le SCR :</p>
+<ul>
+<li>au niveau du projet :</li>
+</ul>
+<p><code>Projet (menu supérieur) &gt; Propriété du Projet... &gt; SCR</code></p>
+<p>Quel est le SCR du projet ?</p>
+<p>Ce SCR se règle sur le SCR de la première couche importée dans le projet. C’est celui qui prime dans la visualisation des couches dans la fenêtre de visualisation.</p>
+<ul>
+<li>au niveau de la couche de données :</li>
+</ul>
+<p><code>clic droit sur la couche dans la fenêtre de gestion des couches &gt; Propriétés &gt; Source</code></p>
+<p>Que constatez-vous?</p>
+<h3 id="changer-le-scr-du-projet">Changer le SCR du projet</h3>
+<p>Il est possible de changer le SCR au niveau du projet en sélectionnant un autre SCR dans ses propriétés, en allant dans :</p>
+<p><code>Projet &gt; Propriétés... &gt; SCR.</code></p>
+<p>Changer le SCR du projet pour le mettre en WGS84.</p>
+<h3 id="changer-le-scr-des-couches">Changer le SCR des couches</h3>
+<h4 id="reprojeter-à-la-volée">Reprojeter à la volée</h4>
+<p>Dans les propriétés d’une couche, auxquelles on accède par un clic droit sur la couche dans la fenêtre de gestion des couches, il est possible de reprojeter “à la volée” chaque couche.</p>
+<p><code>Clic droit sur la couche dans la fenêtre de gestion des couches &gt; Propriétés &gt; Sources.</code></p>
+<p><strong><em>Attention !! reprojecter à la volée n’est pas changer le SCR de la couche de manière pérenne ! Cela peut convenir pour voir les données au même endroit dans la fenêtre de visualisation de QGIS mais cela peut provoquer des erreurs de calcul au moment des traitements ==&gt; il faut donc toujours mieux travailler avec des couches de données avec le même SCR enregistré.</em></strong></p>
+<h4 id="changer-le-scr-dune-couche-de-données-de-manière-pérenne">Changer le SCR d’une couche de données de manière pérenne</h4>
+<p>Pour cela il va falloir ré-enregistrer ces données dans un nouveau fichier, avec le nouveau SCR voulu. On voit à quel point le SCR de données géographiques est profondement lié aux données elles-mêmes. Enregistrer les départements français en WGS84 en suivant ces étapes :</p>
+<p><code>Menu supérieur &gt; vecteur &gt; Outils de gestion de données &gt; Reprojeter une couche &gt; choix de la couche à reprojeter (DEPARTEMENT) / choix du nouveau SCR (WGS 84, EPSG 4326) / choix de l'emplacement et du nom du nouveau fichier (DEPARTEMENT_WGS84).</code></p>
+<h2 id="exercice-2-de-manipulation-intégration-de-données-de-formats-et-de-sources-diverses-dans-qgis">Exercice 2 de manipulation : Intégration de données de formats et de sources diverses dans QGIS</h2>
+<p>Créer un nouveau projet. L’enregistrer sous le nom exo2_structuration_SIG.qgz (attention à bien penser à l’enregistrer régulièrement pendant la manipulation). Nous allons charger dans QGIS plusieurs couches de données, aux sources, formats et conditions de stockage diverses, pour visualiser des informations géologiques sur la France et plus particulièrement sur le département du Lot.</p>
+<h3 id="couche-de-données-vecteur">Couche de données vecteur</h3>
+<p>Réimporter la couche de données des départements de l’IGN. Ouvrir de dossier contenant ces données dans l’explorateur de fichier sur Windows ou le finder de Mac pour observer la structure du.des fichier.s. Que constatez-vous ?</p>
+<p>Dans QGIS, ouvrir la table attributaire :</p>
+<p><code>Clic droit sur la couche &gt; table attributaire</code></p>
+<p>Pour tester les options de sélection et la liaison entre la table attributaire et les objets tracés dans la fenêtre de visualisation, selectionner le département français le plus à l’ouest sur la carte avec la flèche sélection (pictogramme dans le menu supérieur). Regarder dans la table attributaire, vous le retrouverez surligné en bleu.</p>
+<p>Sélectionner ensuite le département du Lot à partir de la table attributaire, en le cherchant par son nom. Remarque : en cliquant sur le nom de la colonne dans la table attributaire, vous pouvez classer les lignes par ordre alphabétique ou numérique (selon le type des données). Vous constater que le département du Lot est alors allumé en jaune dans la fenêtre de visualisation.</p>
+<figure>
+<img src="images/Capture_outil_selection_carte_QGIS.png" title="Capture d&#39;écran de l&#39;outil sélection d&#39;objets sur la carte" alt="Capture d’écran de l’outil sélection d’objets sur la carte" /><figcaption>Capture d’écran de l’outil sélection d’objets sur la carte</figcaption>
+</figure>
+<p>Utiliser l’outil “Zoom sur la sélection” (barre d’outil supérieure) pour centrer la fenêtre de visualisation sur le département du Lot sélectionné.</p>
+<h3 id="couche-de-données-raster">Couche de données raster</h3>
+<p>Télécharger un fichier raster IGN : le Modèle Numérique de Terrain (MNT) du département du Lot. Les MNT sont des données en format raster qui recouvrent toute une surface en modélisant les aspérités, l’altitude du terrain, à partir de données d’altitude mesurées de manière ponctuelle et extrapolées à toute la surface en question à des niveaux différents de précision (ici par cases de 25m). Lien vers les données MNT du Lot sur la page des données libre de l’IGN, précision 25m : <a href="ftp://BD_ALTI_ext:docoazeecoosh1Ai@ftp3.ign.fr/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D046_2019-12-10.7z" class="uri">ftp://BD_ALTI_ext:docoazeecoosh1Ai@ftp3.ign.fr/BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D046_2019-12-10.7z</a> Ouvrir les fichiers MNT recouvrant le Lot dans QGIS via l’onglet Raster du gestionnaire de sources de données et constater ce qu’on peut faire et ne pas faire en allant dans les propriétés des couches raster, en comparaison des couches vecteurs. Changer la visualisation de ces couches raster en réglant leur type de rendu en mode “ombrage” dans l’onglet “Symbologie” des propriétés de la couche et en réglant leur transparence à 50%. Remarque : il est possible de copier et coller un style d’une couche à l’autre :</p>
+<p><code>clic droit sur la couche dont on veut reproduire le style &gt; Styles &gt; copier le style Clic droit sur la couche à laquelle on veut appliquer le même style &gt; Styles &gt; coller le style</code></p>
+<h3 id="intégration-de-données-de-sources-diverses">Intégration de données de sources diverses</h3>
+<h4 id="flux-wmswfs">Flux WMS/WFS :</h4>
+<p>Pour l’instant, nous avons à chaque fois télécharger en local sur notre ordinateur des fichiers de données, que nous avons ensuite affiché dans le logiciel QGIS. Il est possible d’afficher et de traiter des données dans QGIS de manière distante, en se connectant à une base de données ou à des flux web. Ces flux web peuvent être des Web Map Service (WMS), Web Map Tile Service (WMTS ou Web Tile Service (WTS); ce sont des données en mode raster qui sont utiles pour servir de fond de carte par exemple. Il y a également des Web Feature Service (WFS) pour des données en mode vecteurs, qui sont intérogeables objet par objet, comme une couche vecteur classique. Nous allons afficher des données à travers des flux WSM dans QGIS :</p>
+<p><code>Ouvrir le gestionnaire des sources de données &gt; WMS/WMTS &gt; et créer une nouvelle connexion vers un serveur de données WMS comme montré sur la capture d'écran ci-dessous et validez &gt; vous pouvez ensuite cliquer sur connexion pour se connecter au server et voir les couches proposées &gt; vous pouvez afficher la carte géologique à l'échelle de la France en sélectionnant comme sur l'image ci-dessous et en cliquant sur &quot;Appliquer&quot; faites des tests en affichant d'autres données du BRGM Vous pouvez également aller regarder les ressources de WMS ci-dessous et essayer d'afficher les couches qui vous intéressent.</code></p>
+<figure>
+<img src="images/Capture_WMS_BRGM.PNG" title="Capture d&#39;écran du paramétrage de l&#39;outil de gestion des couches pour se connecter au serveur WMS du BRGM" alt="Capture d’écran du paramétrage de l’outil de gestion des couches pour se connecter au serveur WMS du BRGM" /><figcaption>Capture d’écran du paramétrage de l’outil de gestion des couches pour se connecter au serveur WMS du BRGM</figcaption>
+</figure>
+<figure>
+<img src="images/Capture_WMS_BRGM2.PNG" title="Capture d&#39;écran du paramétrage de l&#39;outil de gestion des couches pour afficher la carte géologique à l&#39;échelle de la France" alt="Capture d’écran du paramétrage de l’outil de gestion des couches pour afficher la carte géologique à l’échelle de la France" /><figcaption>Capture d’écran du paramétrage de l’outil de gestion des couches pour afficher la carte géologique à l’échelle de la France</figcaption>
+</figure>
+<p>Ressources pour trouver des flux WMS/WFS : * Documentation IGN sur les clés WMS/WFS : <a href="https://geoservices.ign.fr/blog/2017/06/28/geoportail_sans_compte.html" class="uri">https://geoservices.ign.fr/blog/2017/06/28/geoportail_sans_compte.html</a> + le tutoriel pour intégrer une couche IGN en flux WMS/WFS/WMTS dans QGIS : <a href="https://geoservices.ign.fr/documentation/utilisation_SIG/QGIS.html" class="uri">https://geoservices.ign.fr/documentation/utilisation_SIG/QGIS.html</a> * Une liste de ressources pour des flux WMS/WFS : <a href="https://georezo.net/wiki/main/webmapping/webservices" class="uri">https://georezo.net/wiki/main/webmapping/webservices</a></p>
+<h4 id="osm">OSM</h4>
+<p>QGIS offre un accès direct aux données contenues dans la base de données d’OpenStreetMap que vous pouvez charger directement dans votre projet QGIS, en mode vecteur. Pour cela il faut activer une extension spécifique (les extensions sont des options/outils supplémentaires non-activités par defaut) : QuickOSM.</p>
+<p><code>Extenstions dans le menu supérieur &gt; Installer/gérer les extensions &gt; rechercher QuickOSM &gt; Sélectionner QuickOSM &gt; cliquer sur Installer le plugin Vous retrouverez le plugin dans Vecteur (menu supérieur) &gt; QuickOSM &gt; QuickOSM</code></p>
+<p>Paramétrer l’outil QuickOSM comme sur la capture ci-dessous en zoomant sur le département du Lot afin de récupérer le tracé des rivières à partir d’OpenStreet Map (une emprise plus grande entrainerait une requête trop grosse qui ne pourrait aboutir). Puis explorer les possibilités de données offertes par cet outils QuickOSM notamment en allant regarder la documentation sur les clefs OSM (bouton “Aide sur les clefs/valeurs”). Choisissez les objets d’OSM qui vous intéresse à ajouter à votre carte.</p>
+<figure>
+<img src="images/Capture_quickOSM.PNG" title="Capture d&#39;écran du paramétrage de l&#39;outil QuickOSM pour afficher les rivières principales" alt="Capture d’écran du paramétrage de l’outil QuickOSM pour afficher les rivières principales" /><figcaption>Capture d’écran du paramétrage de l’outil QuickOSM pour afficher les rivières principales</figcaption>
+</figure>
+</body>
+</html>
