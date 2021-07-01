@@ -250,7 +250,7 @@ with(
 )
 
 ##
-## Distances
+## Distances ----
 ##
 ##
 rq <- "with  centroid as (
@@ -272,29 +272,18 @@ from centroid a, centroid b
 ##
 iris.dist0 <- dbGetQuery( pg.qtll2021.co , rq)
 ##
-trin <- function(n, mdiag=F){
-  n <- as.integer(n)
-  n*(n + c(-1,1)[mdiag+1] )/2
-}
-##
-trin(nrow(iris2021.mel.geo0),F)
-
-##
 ctrd <- st_centroid(iris2021.mel.geo0) 
 distmat <- st_distance(x=ctrd,y=ctrd)
 ##
-distmat[1:5,1:5]
-
-##
 m <- matrix(distmat[idx <- match(iris.dist0$code_iris1, ctrd$code_iris) + ( match(iris.dist0$code_iris2, ctrd$code_iris) -1 )*509], nrow=509)
 ##
-m[1:5,1:5]
+n <- 10
+distmat[1:n,1:n]
+m[1:n,1:n]
 ##
 summary(c(
-  iris.dist0$d - m ## unclass(distmat) ## 
+  iris.dist0$d - m ##
 ))
-##
-distmat[ctrd$CODE_IRIS=='590090101', ctrd$CODE_IRIS=='590090102']
 
 ##
 ## Voronoi ----
