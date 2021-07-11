@@ -197,7 +197,7 @@ commune2021 &lt;- read.table(
 )</code></pre>
 <div id="génération-dune-variable-indicatrice-des-collectivités-de-métropole" class="section level2">
 <h2>Génération d’une variable indicatrice des collectivités de Métropole</h2>
-<p>Reprenons l’exemple présenté lundi de la génération d’une variable indicatrice de la Métropole en traitant les codes département comme des nombres :</p>
+<p>Reprenons l’exemple présenté lundi. On souhaite générer une variable indicatrice des DOM-COM d’une part et de la Métropole d’autre part en traitant les codes département comme des nombres malgré le fait que, depuis 1975, le code des départements est alphanumérique.</p>
 <pre class="r"><code>##
 dcom &lt;- as.integer(commune2021$DEP)&gt;970</code></pre>
 <pre><code>## Warning: NAs introduits lors de la conversion automatique</code></pre>
@@ -207,7 +207,7 @@ table(dcom,useNA=&#39;always&#39;)</code></pre>
 <pre><code>## dcom
 ## FALSE  TRUE  &lt;NA&gt; 
 ## 34521   129  3092</code></pre>
-<p>Les NA proviennent de la Corse mais aussi de communes pour lesquelles le département est manquant (on le verra plus loin, il s’agit de communes déléguées) :</p>
+<p>Les NA proviennent de la Corse mais aussi de communes pour lesquelles le département est manquant (il s’agit dans les faits de communes déléguées —voir après) :</p>
 <pre class="r"><code>##
 table(commune2021$DEP[ is.na(dcom)])</code></pre>
 <pre><code>## 

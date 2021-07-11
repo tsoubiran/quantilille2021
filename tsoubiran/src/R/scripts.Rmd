@@ -8,10 +8,10 @@ date: "Juillet 2021"
 knitr::opts_knit$set(root.dir = '../../../../git/0/cartographie/postgis/données/')
 ```
 
-Les petits bouts de codes suivants ont pour but d'illustrer deux points abordés au cours des présentations de [lundi après-midi](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/qtll2021--orga-fr.pdf) (organisation administrative française) et [vendredi matin](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/postgis.pdf) (postgis) :
+Les petits bouts de codes suivants ont pour but de développer plusieurs points abordés au cours des présentations de [lundi après-midi](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/qtll2021--orga-fr.pdf) (organisation administrative française) et [vendredi matin](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/postgis.pdf) (postgis) :
 
 - la génération d'une variable indicatrices de la Métropole et des DOM-COM
-- les opérateurs ensemblistes et les jointures sql avec une application au code géographique qui permettra de faire le lien entre les deux présentations
+- les opérateurs ensemblistes et les jointures sql (avec une application au code géographique qui permettra de faire le lien entre les deux présentations)
 - les fonctions de hachage
 
 
@@ -47,7 +47,9 @@ commune2021 <- read.table(
 
 ## Génération d'une variable indicatrice des collectivités de Métropole
 
-Reprenons l'exemple présenté lundi de la génération d'une variable indicatrice de la Métropole en traitant les codes département comme des nombres. 
+Reprenons l'exemple présenté lundi. On souhaite générer une variable indicatrice des DOM-COM d'une part et 
+de la Métropole d'autre part en traitant les codes département comme des nombres malgré le fait que, depuis 1975,
+le code des départements est alphanumérique. 
 
 ```{r}
 ##
@@ -60,6 +62,7 @@ R nous avertit de l'échec de la conversion de certains codes. En effet,
 ##
 table(dcom,useNA='always')
 ```
+
 Les NA proviennent de la Corse mais aussi de communes pour lesquelles le département est manquant 
 (il s'agit dans les faits de communes déléguées —voir après) :
 
@@ -67,6 +70,7 @@ Les NA proviennent de la Corse mais aussi de communes pour lesquelles le départ
 ##
 table(commune2021$DEP[ is.na(dcom)])
 ```
+
 Donc, si on prend le complément de dcom :
 
 ```{r}
