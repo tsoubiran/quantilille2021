@@ -1,1 +1,527 @@
-/media/k64g/ts/traitements/cnrs/ceraps/formations/quantilille/écoles/2021/modules/2/src/R/k64g--qtll2021--carto-0--exemples-0-1.Rmd
+---
+title: "Scripts"
+author: "Thomas Soubiran"
+date: "Juillet 2021"
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = '../../../../git/0/cartographie/postgis/données/')
+```
+
+Les petits bouts de codes suivants ont pour but d'illustrer deux points abordés au cours des présentations de [lundi après-midi](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/qtll2021--orga-fr.pdf) (organisation administrative française) et [vendredi matin](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/postgis.pdf) (postgis) :
+
+- la génération d'une variable indicatrices de la Métropole et des DOM-COM
+- les opérateurs ensemblistes et les jointures sql avec une application au code géographique qui permettra de faire le lien entre les deux présentations
+- les fonctions de hachage
+
+
+Les données utilisées se trouvent dans le répertoire csv de ce répertoire :
+
+``` {r,eval=FALSE}  
+qtlldir <- "/chemin/vers/le/répertoire/postgis/données/" 
+setwd(qtlldir)
+``` 
+
+``` {r}  
+getwd()
+```
+
+Commençons par importer le fichier des codes communes de l'Insee qui servira d'exemple :
+
+``` {r,eval=TRUE}  
+##
+commune2021 <- read.table(
+  paste(
+    "csv"
+    , "commune2021.csv"
+    , sep="/"
+  )
+  , sep = ","
+  , header = T
+  , quote = ''
+  , stringsAsFactors = F
+)
+```
+
+
+
+## Génération d'une variable indicatrice des collectivités de Métropole
+
+Reprenons l'exemple présenté lundi de la génération d'une variable indicatrice de la Métropole en traitant les codes département comme des nombres. 
+
+```{r}
+##
+dcom <- as.integer(commune2021$DEP)>970
+```
+
+R nous avertit de l'échec de la conversion de certains codes. En effet, 
+
+```{r}
+##
+table(dcom,useNA='always')
+```
+Les NA proviennent de la Corse mais aussi de communes pour lesquelles le département est manquant 
+(il s'agit dans les faits de communes déléguées —voir après) :
+
+```{r}
+##
+table(commune2021$DEP[ is.na(dcom)])
+```
+Donc, si on prend le complément de dcom :
+
+```{r}
+##
+table(!dcom,useNA='always')
+```
+3092 commnes sont manquantes. On pourrait évidemment combiner `is.na()` avec `!dcom` mais cela devient problématique 
+si des valeurs étaient déjà NA avant la conversion qui se verraient donc située en Métropole alors que cette information 
+n'est pas disponible. Il se trouve que, en l'espèce, tous les NA sont en Métropole mais ce n'est pas nécessairement le cas.
+
+Une autre approche utilise le fait que les caractères ont un ordre
+
+```{r}
+##
+'2A' < '97'
+```
+
+Notons toutefois que
+
+```{r}
+##
+'A' < '7'
+```
+ce qui n'est pas un problème ici car le tri se fait de gauche à droite et
+
+```{r}
+##
+'2' < '9'
+```
+
+Ce faisant, 
+
+```{r}
+##
+dcom <- commune2021$DEP>'970'
+table(dcom,useNA='always')
+```
+Le problème est maintenant que 
+
+```{r}
+##
+'' < '970'
+```
+Donc les valeurs manquantes sont encore attribuées à la Métropole. Il faut donc remplacer les chaînes vides par NA (ce qui possible à l'importation en passant l'option `na.strings =''` en argument).
+
+``` {r,eval=TRUE}  
+##
+commune2021 <- read.table(
+  paste(
+    "csv"
+    , "commune2021.csv"
+    , sep="/"
+  )
+  , sep = ","
+  , header = T
+  , quote = ''
+  , na.strings =''
+  , stringsAsFactors = F
+)
+```
+
+On obtient enfin le résultat souhaité :
+```{r}
+##
+dcom <- commune2021$DEP>'970'
+table(dcom,useNA='always')
+table(!dcom,useNA='always')
+```
+
+## Jointures
+
+### Opérations ensemblistes avec R
+
+Commençons par générer des données
+
+``` {r}  
+x <- data.frame(oid=1:6,lib='A')
+y <- data.frame(oid=4:8,lib='B')
+```
+La colonne oid stocke la clefs du data.frame et c'est colonne qui servira à joindre les deux tables.
+
+Appliquons maintenant les opérations ensemblistes vues dans la présentation aux clefs d'appariement :
+
+**Union des deux ensembles (toutes les clefs (univers)) :**
+
+```{r}
+## 
+union(x$oid,y$oid)
+```
+
+**Intersection des deux ensembles (clefs en commun) :**
+
+```{r}
+intersect(x$oid,y$oid)
+```
+
+**Différence des deux ensembles :**
+
+```{r}
+## clefs de x absentes de y
+setdiff(x$oid,y$oid)
+## clefs de y absentes de x
+setdiff(y$oid,x$oid)
+```
+
+On peut aussi calculer la **différence symétrique** (clefs qui sont soit absentes de x ou soit absentes de y càd le complément de l'union des clefs) :
+
+
+```{r}
+## les deux expressions sont strictement équivalentes
+symdiff <- function( x, y){
+  sort(union(setdiff(x, y), setdiff( y, x)))
+  ## ou : sort(setdiff( union(x, y), intersect(x, y)))
+}
+symdiff(y$oid,x$oid)
+```
+
+### Exemples des différents types de jointures
+
+**Join :**
+
+``` {r}  
+## 
+merge(x,y, by='oid')
+```
+
+Équivalent SQL :
+
+``` {sql,eval=FALSE}  
+select a.oid as xoid, a.lib as xlib, b.oid as yoid, b.lib as ylib
+from x as a join y as b
+on a.oid and b.oid
+;
+```
+
+**Left join :**
+
+```{r}
+##
+merge(x,y, by='oid', all.x = T)
+```
+
+Équivalent SQL :
+
+``` {sql,eval=FALSE}  
+select a.oid as xoid, a.lib as xlib, b.oid as yoid, b.lib as ylib
+from x as a left join y as b
+on a.oid and b.oid
+;
+```
+
+**Right join :**
+
+```{r}
+## 
+merge(x,y, by='oid', all.y = T)
+```
+
+Équivalent SQL :
+
+``` {sql,eval=FALSE}  
+select a.oid as xoid, a.lib as xlib, b.oid as yoid, b.lib as ylib
+from x as a right join y as b
+on a.oid and b.oid
+;
+```
+
+**Full outer join :**
+
+```{r}
+## 
+merge(x,y, by='oid', all = T)
+```
+
+Équivalent SQL :
+
+``` {sql,eval=FALSE}  
+select a.oid as xoid, a.lib as xlib, b.oid as yoid, b.lib as ylib
+from x as a full outer join y as b
+on a.oid and b.oid
+;
+```
+
+**Produit cartésien sur les clefs** (toutes les combinaisons deux-à-deux des clefs)
+
+```{r}
+## 
+expand.grid(x$oid,y$oid)
+
+```
+Équivalent SQL :
+
+``` {sql,eval=FALSE}  
+select a.oid as xoid, a.lib as xlib, b.oid as yoid, b.lib as ylib
+from x as a, y as b
+;
+```
+
+Le nombre total de combinaisons vaut
+
+```{r}
+nrow(x)*nrow(y)
+
+```
+
+Ce nombre grandit donc très rapidement et conduit vite à des tables de grande taille.
+
+
+### Application au Code officiel géographique
+
+Lors la présentation de lundi  
+nous avons vu que plusieurs type de communes existent :
+
+- les associées et déléguées
+- les communes à arrondissements
+
+Voyons maintenant comment cela se traduit concrètement dans le Code officiel géographique.
+Les fichiers Intercommunalite-Metropole_au_01-01-2021.csv et Intercommunalite-Metropole_au_01-01-2021--comp.csv du répertoire csv 
+renseignent respectivement les EPCI et leur composition :
+
+``` {r,eval=FALSE}  
+## Fichier des EPCI
+epci2021 <- read.table(  
+  paste(
+    "csv"
+    , "Intercommunalite-Metropole_au_01-01-2021.csv"
+    , sep="/"
+  )
+  , sep=";"
+  , header = T
+  , stringsAsFactors = F
+)
+```
+
+```{r,eval=FALSE}
+## Fichier de la composition des EPCI
+epci2021.comp <- read.table(  
+  paste(
+    "csv"
+    , "Intercommunalite-Metropole_au_01-01-2021--comp.csv"
+    , sep="/"
+  )
+  , sep=";"
+  , header = T
+  , stringsAsFactors = F
+)
+```
+
+
+
+### Appariement des codes communes
+
+Comparons maintenant les clefs des deux tables EPCI,
+
+```{r}
+##
+symdiff(epci2021$EPCI, epci2021.comp$EPCI)
+```
+
+on a bien les mêmes clefs dans les deux fichiers.
+
+Comparons ensuite le fichier de composition des communes avec le fichier commune2021 :
+
+```{r}
+##
+nrow(epci2021.comp) - nrow(commune2021)
+```
+
+On a ici une première indication de différence entre les deux sources car la table commune2021 comporte 2777 communes en plus. 
+
+```{r}
+##
+length(symdiff(epci2021.comp$CODGEO, commune2021$COM))
+length(setdiff(epci2021.comp$CODGEO, commune2021$COM))
+length(setdiff(commune2021$COM,epci2021.comp$CODGEO))
+```
+Il manque donc 2157 clefs _uniques_ dans le fichier commune2021. Par contre, aucune clefs ne manque dans le fichier EPCI. 
+
+Pour comprendre ce qui se passe, réalisons une jointure à gauche des deux fichiers (une jointure complète donnerait le même résultat) :
+
+```{r,eval=FALSE}
+## 
+commepci2021 <- merge(commune2021, epci2021.comp, by.x= 'COM', by.y='CODGEO', all.x = T, suffixes = c(".comm", ".epci"))
+##
+View(commepci2021)
+```
+
+Comme vu précédemment, les valeurs des communes présentes dans commune2021 mais absentes de epci2021.comp valent NA. 
+On peut donc s'en servir comme indicatrice de la différence A - B : 
+
+```{r}
+## 
+table( is.na(commepci2021$EPCI) )
+```
+
+Du fait qu'il y a plusieurs façon de délimiter les communes, voyons si les différences proviennent de là :
+
+```{r}
+## 
+(frq<-table(commepci2021$TYPECOM, is.na(commepci2021$EPCI)))
+```
+
+Note : 
+
+- COM  : communes
+- COMA : communes associées 
+- COMD : communes déléguées 
+- ARM  : arrondissements 
+
+En sommant la second colonne de `frq`
+
+```{r}
+## 
+sum(frq[,2])
+```
+
+on retrouve de clefs manquantes dans epci2021.comp. Les ( 2777 - 2157 ) = 620 lignes encore manquantes s'expliquent par la répétition 
+du code commune pour certaines communes déléguées qui ont repris le code de la commune avec laquelle elles ont été fusionnée.
+
+La différence du nombre de ligne entre les deux tables s'explique donc bien par l'absence des arrondissements, des communes associées 
+et des communes déléguées dans la table EPCI .
+
+Comme souligné lors de la présentation de lundi, 
+il faut donc toujours faire attention au découpage dans lequel les informations à la commune sont diffusées.
+
+
+
+## Fonctions de hachage
+
+Cette partie vise à développer quelques aspects plus avancés des fonctions de hachage non abordés dans la partie cours
+et à illustrer leur fonctionnement en pratique. 
+
+
+Comme expliqué dans la présentation, les fonctions de hachage ont pour objet de transformer une séquence binaire en nombre 
+dans une plage prédéterminée pour s'en servir d'indexe. L'exemple de fonction utilisé est le suivant :
+
+
+``` {r}  
+h <- function(x, sz, init=5381, M=33){
+  mod <- 2^32
+  h = init
+  for( l in  as.integer(charToRaw(x)) ){
+    h <- ( (M * h)%%mod  + l )%%mod
+  }
+  as.integer(h %% sz)+1L
+}
+```
+
+### Remarques à propos de la fonction
+
+Cette fonction de hachage est un classique du genre. Elle est notamment connue pour apparaître dans le _Red Dragon Book_
+qui est incunable de la littérature sur la conception des compilateurs. 
+
+Les paramètres par défaut sont la version de Bernstein mais d'autres choix sont possibles comme celle de Kernighan & Ritchie, deux des concepteurs du langage C, 
+(plus loin). Et, comme ils le disent, "This is not the best possible algorithm, but it has the merit of extreme simplicity". 
+
+Au de-là de son caractère vénérable, elle a été avant tout choisie car elle peut être facilement implémentée avec R. 
+De nombreuses autres fonctions existent ayant de bien meilleures propriétés mais elles auraient été beaucoup plus diffciles à implémenter ici.
+
+Comme une fonction de hachage vise en transformer une séquence en nombre (quel que soit son type : chaîne de caractère mais aussi entier, floatant,…), l'appel de fonction transforme donc d'abord la chaîne de caractères en un vecteur d'octet qui n'est autre que la représentation sous-jacente de la chaîne de caractère en mémoire :
+
+``` {r,eval=TRUE}  
+as.integer(charToRaw("L'Abergement-Clémenciat"))
+```
+
+Notez que le résultat est susceptible de varier en fonction de l'encodage de la chaîne de caractère. 
+Ce vecteur est celui que l'on obtient dans une session en UTF-8. Si on convertit la chaîne en WINDOWS-1252, 
+
+``` {r,eval=TRUE}  
+as.integer(charToRaw(iconv("L'Abergement-Clémenciat", to="WINDOWS-1252")))
+```
+
+le vecteur est plus court et le seizième octet est différent. Dans les deux jeux de caractères, "é" a le même point de code U+E9 (233)
+mais, en UTF-8, il est encodé avec deux octets ({0xC3, OxA9}) là où le code page Windows 1252 l'encode directement avec son point de code. 
+Pour plus d'informations sur l'UTF-8, voir [cette page](https://numa.hypotheses.org/626) ainsi que [celle-ci](https://numa.hypotheses.org/674) 
+sur encodage des jeux de caractères plus généralement.
+
+En conséquence de quoi, les hachis seront différents en fonction de l'encodage utilisé ce qui ne pose pas de problèmes sauf si on utilise 
+un encodage pour l'indexation et un autre pour la recherche.
+
+On réalise de plus les calculs avec des flottants modulo (`%%`) 2^32 pour émuler les calculs avec des entiers non signé 32 bits. 
+En effet, R ne propose que des entiers _signés_ 32 bits qui donnerait des résultats différents. En outre, 
+le débordement par le haut qui est normal ici conduirait à la production de NA ce qui n'est clairement pas ce qu'on veut.
+
+``` {r}  
+## débordement d'entier par le haut
+print(as.integer(2L^31 - 1L)) +1L
+```
+
+### Application de la fonction
+
+Voyons maintenant ce que ça donne avec la première commune du Code officiel géographique dans l'ordre lexicographique :
+
+``` {r,include=TRUE}  
+(i<-h("L'Abergement-Clémenciat", 37742))
+```
+
+La fonction retourne 24608. La valeur ("01001") sera donc stockée à la position 24608. 
+
+``` {r}  
+htab <- integer(37742)
+htab[i] <- "01001"
+```
+
+Pour la retrouver, il suffit donc de hacher à nouveau la clef. 
+
+``` {r}  
+htab[h("L'Abergement-Clémenciat", 37742)]
+```
+
+Mais ce serait sans compter sur le fait que, selon le théorème des tiroirs (ou le paradoxe des anniversaires), les clefs ne sont malheureusement pas nécessairement uniques. 
+Ce qui peut être illustré avec une variante de la fonction, la version Kernighan & Ritchie :
+
+``` {r}  
+hcom <- sapply(commune2021$LIBELLE, function(x)h(x, 37742, 0, 31))
+```
+
+Pas besoin de faire un test du Khi^2 pour voir que la distribution est n'est pas tout à fait uniforme. 
+
+``` {r}
+(frq <- table(table(hcom)))
+```
+
+De plus, des collisions apparaissent pour plus des 2/3 des clefs et .39 des indices ne sont pas occupées.
+
+``` {r}
+nrow(commune2021)-frq[1]
+prop.table(table(match(1:nrow(commune2021), hcom,0)!=0))
+```
+
+En conséquence de quoi, L'Abergement-Clémenciat à la même index que Gueugnon
+
+``` {r}  
+which(hcom==hcom[1])
+```
+
+Comme la chaïne "Gueugnon" a été hachées après celle de "L'Abergement-Clémenciat", la recherche 
+
+``` {r,eval=FALSE}  
+htab[h("L'Abergement-Clémenciat", 37742)]
+```
+
+retourne donc "71230" au lieu de "01001".
+
+Pour réduire le nombre de clefs ayant le même index, on peut commencer par doubler la capacité de la table, 
+
+``` {r}  
+hcom <- sapply(commune2021$LIBELLE, function(x)h(x, 37742*2, 0, 31))
+(frq <- table(table(hcom)))
+nrow(commune2021)-frq[1]
+prop.table(table(match(1:(nrow(commune2021)*2),hcom,0)!=0))
+```
+
+Le nombre de collisions se réduit mais reste conséquent et la proportion d'indices inutilisés augmente (.6).
+
+Il conviendra donc d'utiliser une autre fonction tout en gardant à l'esprit qu'elle ne réduira pas la probabilité de collision à zéro (sauf cas particuiers)
+et qu'il faudra donc de toute façon rajouter une étape pour les gérer.
+
