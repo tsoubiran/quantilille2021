@@ -171,17 +171,15 @@ pre code {
 </div>
 
 
-<p>Les petits bouts de codes suivants ont pour but d’illustrer deux points abordés au cours des présentations de <a href="https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/qtll2021--orga-fr.pdf">lundi après-midi</a> (organisation administrative française) et <a href="https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/postgis.pdf">vendredi matin</a> (postgis) :</p>
+<p>Les petits bouts de codes suivants ont pour but de développer plusieurs points abordés au cours des présentations de <a href="https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/qtll2021--orga-fr.pdf">lundi après-midi</a> (organisation administrative française) et <a href="https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/postgis.pdf">vendredi matin</a> (postgis) :</p>
 <ul>
 <li>la génération d’une variable indicatrices de la Métropole et des DOM-COM</li>
-<li>les opérateurs ensemblistes et les jointures sql avec une application au code géographique qui permettra de faire le lien entre les deux présentations</li>
+<li>les opérateurs ensemblistes et les jointures SQL (avec une application au code géographique qui permettra de faire le lien entre les deux présentations)</li>
 <li>les fonctions de hachage</li>
 </ul>
 <p>Les données utilisées se trouvent dans le répertoire csv de ce répertoire :</p>
 <pre class="r"><code>qtlldir &lt;- &quot;/chemin/vers/le/répertoire/postgis/données/&quot; 
 setwd(qtlldir)</code></pre>
-<pre class="r"><code>getwd()</code></pre>
-<pre><code>## [1] &quot;/media/k64g/ts/traitements/cnrs/ceraps/formations/quantilille/écoles/2021/git/0/cartographie/postgis/données&quot;</code></pre>
 <p>Commençons par importer le fichier des codes communes de l’Insee qui servira d’exemple :</p>
 <pre class="r"><code>##
 commune2021 &lt;- read.table(
@@ -243,7 +241,7 @@ table(dcom,useNA=&#39;always&#39;)</code></pre>
 <pre class="r"><code>##
 &#39;&#39; &lt; &#39;970&#39;</code></pre>
 <pre><code>## [1] TRUE</code></pre>
-<p>Donc les valeurs manquantes sont encore attribuées à la Métropole. Il faut donc remplacer les chaînes vides par NA (ce qui possible à l’importation en passant l’option <code>na.strings =&#39;&#39;</code> en argument).</p>
+<p>Donc les valeurs manquantes sont encore attribuées à la Métropole car elles correspondent à des chaînes de caractères vides. Il faut donc remplacer ces chaînes par NA ce qui possible à l’importation en passant l’option <code>na.strings =&#39;&#39;</code> en argument :</p>
 <pre class="r"><code>##
 commune2021 &lt;- read.table(
   paste(
@@ -310,6 +308,7 @@ merge(x,y, by=&#39;oid&#39;)</code></pre>
 ## 1   4     A     B
 ## 2   5     A     B
 ## 3   6     A     B</code></pre>
+<p>Comme on peut le voir, R attribue une valeur manquante aux valeurs des clefs de x absentes de y.</p>
 <p>Équivalent SQL :</p>
 <pre class="sql"><code>select a.oid as xoid, a.lib as xlib, b.oid as yoid, b.lib as ylib
 from x as a join y as b
@@ -406,8 +405,7 @@ from x as a, y as b
 </div>
 <div id="application-au-code-officiel-géographique" class="section level3">
 <h3>Application au Code officiel géographique</h3>
-<p>Lors la présentation de lundi<br />
-nous avons vu que plusieurs type de communes existent :</p>
+<p>Lors la présentation de lundi nous avons vu que plusieurs type de communes existent :</p>
 <ul>
 <li>les associées et déléguées</li>
 <li>les communes à arrondissements</li>
@@ -467,7 +465,7 @@ table( is.na(commepci2021$EPCI) )</code></pre>
 <pre><code>## 
 ## FALSE  TRUE 
 ## 35585  2157</code></pre>
-<p>Du fait qu’il y a plusieurs façon de délimiter les communes, voyons si les différences proviennent de là :</p>
+<p>On retrouve le nombre de clefs absentes dans epci2021.comp. Du fait qu’il y a plusieurs façon de délimiter les communes, voyons si les différences proviennent de là :</p>
 <pre class="r"><code>## 
 (frq&lt;-table(commepci2021$TYPECOM, is.na(commepci2021$EPCI)))</code></pre>
 <pre><code>##       
@@ -487,15 +485,34 @@ table( is.na(commepci2021$EPCI) )</code></pre>
 <pre class="r"><code>## 
 sum(frq[,2])</code></pre>
 <pre><code>## [1] 2157</code></pre>
-<p>on retrouve de clefs manquantes dans epci2021.comp. Les ( 2777 - 2157 ) = 620 lignes encore manquantes s’expliquent par la répétition du code commune pour certaines communes déléguées qui ont repris le code de la commune avec laquelle elles ont été fusionnée.</p>
+<p>on retrouve bien de clefs manquantes dans epci2021.comp. Les ( 2777 - 2157 ) = 620 lignes encore manquantes s’expliquent par la répétition du code commune pour certaines communes déléguées qui ont repris le code de la commune avec laquelle elles ont été fusionnées :</p>
+<pre class="r"><code>## 
+table( table(commune2021$COM) &gt;1)</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+## 36502   620</code></pre>
 <p>La différence du nombre de ligne entre les deux tables s’explique donc bien par l’absence des arrondissements, des communes associées et des communes déléguées dans la table EPCI .</p>
+<p>Pour les communes associées-déléguées, peut donc renseigner soit le code de la commune entière, soit le code de ses composantes. Néanmoins le fichier comporte une colonne permettant de retrouver le code commune commun à toutes les composantes des communes :</p>
+<pre class="r"><code>table(!is.na(commune2021$COMPARENT))</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+## 34965  2777</code></pre>
+<p>Le nombre de valeurs non-manquante est donc égale à la différence du nombre de lignes (2777). On peut donc s’en servir pour apparier les deux fichiers en créant une nouvelle variable :</p>
+<pre class="r"><code>## 
+commune2021$COM1 &lt;- with(commune2021, ifelse( !is.na(COMPARENT), sub(&quot; &quot;, &quot;0&quot;, sprintf(&quot;%\u00305s&quot;, COMPARENT)), COM) )
+##
+symdiff(epci2021.comp$CODGEO, commune2021$COM1)</code></pre>
+<pre><code>## character(0)</code></pre>
+<p>Il n’y a donc plus de différences entre les univers des deux clefs. On peut donc fusionner les deux tables en réalisant une jointure simple:</p>
+<pre class="r"><code>##
+commepci2021 &lt;- merge(commune2021, epci2021.comp, by.x= &#39;COM1&#39;, by.y=&#39;CODGEO&#39;, suffixes = c(&quot;.comm&quot;, &quot;.epci&quot;))</code></pre>
 <p>Comme souligné lors de la présentation de lundi, il faut donc toujours faire attention au découpage dans lequel les informations à la commune sont diffusées.</p>
 </div>
 </div>
 <div id="fonctions-de-hachage" class="section level2">
 <h2>Fonctions de hachage</h2>
 <p>Cette partie vise à développer quelques aspects plus avancés des fonctions de hachage non abordés dans la partie cours et à illustrer leur fonctionnement en pratique.</p>
-<p>Comme expliqué dans la présentation, les fonctions de hachage ont pour objet de transformer une séquence binaire en nombre dans une plage prédéterminée pour s’en servir d’indexe. L’exemple de fonction utilisé est le suivant :</p>
+<p>Comme expliqué dans la présentation, les fonctions de hachage ont pour objet de transformer une séquence binaire en nombre dans une plage prédéterminée pour s’en servir d’index. L’exemple de fonction utilisé est le suivant :</p>
 <pre class="r"><code>h &lt;- function(x, sz, init=5381, M=33){
   mod &lt;- 2^32
   h = init
@@ -506,8 +523,8 @@ sum(frq[,2])</code></pre>
 }</code></pre>
 <div id="remarques-à-propos-de-la-fonction" class="section level3">
 <h3>Remarques à propos de la fonction</h3>
-<p>Cette fonction de hachage est un classique du genre. Elle est notamment connue pour apparaître dans le <em>Red Dragon Book</em> qui est incunable de la littérature sur la conception des compilateurs.</p>
-<p>Les paramètres par défaut sont la version de Bernstein mais d’autres choix sont possibles comme celle de Kernighan &amp; Ritchie, deux des concepteurs du langage C, (plus loin). Et, comme ils le disent, “This is not the best possible algorithm, but it has the merit of extreme simplicity”.</p>
+<p>Cette fonction de hachage est un classique du genre. Elle est notamment connue pour apparaître dans le <a href="https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools"><em>Red Dragon Book</em></a> qui est un incunable de la littérature sur la conception des compilateurs.</p>
+<p>Les paramètres par défaut sont la version de Bernstein mais d’autres choix sont possibles comme celle de Kernighan &amp; Ritchie, deux des concepteurs du langage C, (plus loin). Et, de leur aveu même, “This is not the best possible algorithm, but it has the merit of extreme simplicity”.</p>
 <p>Au de-là de son caractère vénérable, elle a été avant tout choisie car elle peut être facilement implémentée avec R. De nombreuses autres fonctions existent ayant de bien meilleures propriétés mais elles auraient été beaucoup plus diffciles à implémenter ici.</p>
 <p>Comme une fonction de hachage vise en transformer une séquence en nombre (quel que soit son type : chaîne de caractère mais aussi entier, floatant,…), l’appel de fonction transforme donc d’abord la chaîne de caractères en un vecteur d’octet qui n’est autre que la représentation sous-jacente de la chaîne de caractère en mémoire :</p>
 <pre class="r"><code>as.integer(charToRaw(&quot;L&#39;Abergement-Clémenciat&quot;))</code></pre>
@@ -517,7 +534,7 @@ sum(frq[,2])</code></pre>
 <pre><code>##  [1]  76  39  65  98 101 114 103 101 109 101 110 116  45  67 108 233 109 101 110  99 105  97 116</code></pre>
 <p>le vecteur est plus court et le seizième octet est différent. Dans les deux jeux de caractères, “é” a le même point de code U+E9 (233) mais, en UTF-8, il est encodé avec deux octets ({0xC3, OxA9}) là où le code page Windows 1252 l’encode directement avec son point de code. Pour plus d’informations sur l’UTF-8, voir <a href="https://numa.hypotheses.org/626">cette page</a> ainsi que <a href="https://numa.hypotheses.org/674">celle-ci</a> sur encodage des jeux de caractères plus généralement.</p>
 <p>En conséquence de quoi, les hachis seront différents en fonction de l’encodage utilisé ce qui ne pose pas de problèmes sauf si on utilise un encodage pour l’indexation et un autre pour la recherche.</p>
-<p>On réalise de plus les calculs avec des flottants modulo (<code>%%</code>) 2^32 pour émuler les calculs avec des entiers non signé 32 bits. En effet, R ne propose que des entiers <em>signés</em> 32 bits qui donnerait des résultats différents. En outre, le débordement par le haut qui est normal ici conduirait à la production de NA ce qui n’est clairement pas ce qu’on veut.</p>
+<p>On réalise de plus les calculs avec des flottants modulo (<code>%%</code>) 2^32 pour émuler les calculs avec des entiers non signé 32 bits. En effet, R ne propose que des entiers <em>signés</em> 32 bits qui donnerait des résultats différents. En outre, le débordement par le haut qui est normal ici conduirait à la production de NA ce qui n’est clairement pas le résultat attendu.</p>
 <pre class="r"><code>## débordement d&#39;entier par le haut
 print(as.integer(2L^31 - 1L)) +1L</code></pre>
 <pre><code>## [1] 2147483647</code></pre>
@@ -537,7 +554,7 @@ htab[i] &lt;- &quot;01001&quot;</code></pre>
 <pre><code>## [1] &quot;01001&quot;</code></pre>
 <p>Mais ce serait sans compter sur le fait que, selon le théorème des tiroirs (ou le paradoxe des anniversaires), les clefs ne sont malheureusement pas nécessairement uniques. Ce qui peut être illustré avec une variante de la fonction, la version Kernighan &amp; Ritchie :</p>
 <pre class="r"><code>hcom &lt;- sapply(commune2021$LIBELLE, function(x)h(x, 37742, 0, 31))</code></pre>
-<p>Pas besoin de faire un test du Khi^2 pour voir que la distribution est n’est pas tout à fait uniforme.</p>
+<p>Pas besoin de faire un test du Khi^2 pour voir que la distribution n’est pas tout à fait uniforme.</p>
 <pre class="r"><code>(frq &lt;- table(table(hcom)))</code></pre>
 <pre><code>## 
 ##     1     2     3     4     5     6     7     8     9    10    11    12    13    14 
@@ -550,14 +567,14 @@ htab[i] &lt;- &quot;01001&quot;</code></pre>
 <pre><code>## 
 ##    FALSE     TRUE 
 ## 0.392507 0.607493</code></pre>
-<p>En conséquence de quoi, L’Abergement-Clémenciat à la même index que Gueugnon</p>
+<p>En conséquence de quoi, L’Abergement-Clémenciat à la même indice que Gueugnon</p>
 <pre class="r"><code>which(hcom==hcom[1])</code></pre>
 <pre><code>## L&#39;Abergement-Clémenciat                Gueugnon 
 ##                       1                   30298</code></pre>
 <p>Comme la chaïne “Gueugnon” a été hachées après celle de “L’Abergement-Clémenciat”, la recherche</p>
 <pre class="r"><code>htab[h(&quot;L&#39;Abergement-Clémenciat&quot;, 37742)]</code></pre>
 <p>retourne donc “71230” au lieu de “01001”.</p>
-<p>Pour réduire le nombre de clefs ayant le même index, on peut commencer par doubler la capacité de la table,</p>
+<p>Pour réduire le nombre de clefs ayant le même indice, on peut commencer par doubler la capacité de la table,</p>
 <pre class="r"><code>hcom &lt;- sapply(commune2021$LIBELLE, function(x)h(x, 37742*2, 0, 31))
 (frq &lt;- table(table(hcom)))</code></pre>
 <pre><code>## 

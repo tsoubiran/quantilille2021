@@ -5,13 +5,13 @@ date: "Juillet 2021"
 ---
 
 ```{r, setup, include=FALSE}
-knitr::opts_knit$set(root.dir = '../../../../git/0/cartographie/postgis/données/')
+knitr::opts_knit$set(root.dir = qtlldir)
 ```
 
 Les petits bouts de codes suivants ont pour but de développer plusieurs points abordés au cours des présentations de [lundi après-midi](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/qtll2021--orga-fr.pdf) (organisation administrative française) et [vendredi matin](https://gitlab.univ-lille.fr/quantilille/quantilille2021/cartographie/table-ronde/postgis.pdf) (postgis) :
 
 - la génération d'une variable indicatrices de la Métropole et des DOM-COM
-- les opérateurs ensemblistes et les jointures sql (avec une application au code géographique qui permettra de faire le lien entre les deux présentations)
+- les opérateurs ensemblistes et les jointures SQL (avec une application au code géographique qui permettra de faire le lien entre les deux présentations)
 - les fonctions de hachage
 
 
@@ -21,10 +21,6 @@ Les données utilisées se trouvent dans le répertoire csv de ce répertoire :
 qtlldir <- "/chemin/vers/le/répertoire/postgis/données/" 
 setwd(qtlldir)
 ``` 
-
-``` {r}  
-getwd()
-```
 
 Commençons par importer le fichier des codes communes de l'Insee qui servira d'exemple :
 
@@ -114,7 +110,7 @@ Le problème est maintenant que
 ##
 '' < '970'
 ```
-Donc les valeurs manquantes sont encore attribuées à la Métropole. Il faut donc remplacer les chaînes vides par NA (ce qui possible à l'importation en passant l'option `na.strings =''` en argument).
+Donc les valeurs manquantes sont encore attribuées à la Métropole car elles correspondent à des chaînes de caractères vides. Il faut donc remplacer ces chaînes par NA ce qui possible à l'importation en passant l'option `na.strings =''` en argument :
 
 ``` {r,eval=TRUE}  
 ##
@@ -196,6 +192,8 @@ symdiff(y$oid,x$oid)
 ## 
 merge(x,y, by='oid')
 ```
+
+Comme on peut le voir, R attribue une valeur manquante aux valeurs des clefs de x absentes de y.
 
 Équivalent SQL :
 
@@ -281,8 +279,7 @@ Ce nombre grandit donc très rapidement et conduit vite à des tables de grande 
 
 ### Application au Code officiel géographique
 
-Lors la présentation de lundi  
-nous avons vu que plusieurs type de communes existent :
+Lors la présentation de lundi nous avons vu que plusieurs type de communes existent :
 
 - les associées et déléguées
 - les communes à arrondissements
@@ -351,7 +348,7 @@ Il manque donc 2157 clefs _uniques_ dans le fichier commune2021. Par contre, auc
 
 Pour comprendre ce qui se passe, réalisons une jointure à gauche des deux fichiers (une jointure complète donnerait le même résultat) :
 
-```{r,eval=FALSE}
+```{r,eval=TRUE}
 ## 
 commepci2021 <- merge(commune2021, epci2021.comp, by.x= 'COM', by.y='CODGEO', all.x = T, suffixes = c(".comm", ".epci"))
 ##
@@ -366,7 +363,8 @@ On peut donc s'en servir comme indicatrice de la différence A - B :
 table( is.na(commepci2021$EPCI) )
 ```
 
-Du fait qu'il y a plusieurs façon de délimiter les communes, voyons si les différences proviennent de là :
+On retrouve le nombre de clefs absentes dans epci2021.comp. Du fait qu'il y a plusieurs façon de délimiter les communes, 
+voyons si les différences proviennent de là :
 
 ```{r}
 ## 
@@ -387,16 +385,43 @@ En sommant la second colonne de `frq`
 sum(frq[,2])
 ```
 
-on retrouve de clefs manquantes dans epci2021.comp. Les ( 2777 - 2157 ) = 620 lignes encore manquantes s'expliquent par la répétition 
-du code commune pour certaines communes déléguées qui ont repris le code de la commune avec laquelle elles ont été fusionnée.
+on retrouve bien de clefs manquantes dans epci2021.comp. Les ( 2777 - 2157 ) = 620 lignes encore manquantes s'expliquent par la répétition 
+du code commune pour certaines communes déléguées qui ont repris le code de la commune avec laquelle elles ont été fusionnées :
+
+```{r}
+## 
+table( table(commune2021$COM) >1)
+```
 
 La différence du nombre de ligne entre les deux tables s'explique donc bien par l'absence des arrondissements, des communes associées 
 et des communes déléguées dans la table EPCI .
 
+Pour les communes associées-déléguées, peut donc renseigner soit le code de la commune entière, soit le code de ses composantes. 
+Néanmoins le fichier comporte une colonne permettant de retrouver le code commune commun à toutes les composantes des communes :
+
+```{r,eval=TRUE}
+table(!is.na(commune2021$COMPARENT))
+```
+
+Le nombre de valeurs non-manquante est donc égale à la différence du nombre de lignes (2777). On peut donc s'en servir pour apparier les deux fichiers en créant une nouvelle variable :
+
+```{r,eval=TRUE}
+## 
+commune2021$COM1 <- with(commune2021, ifelse( !is.na(COMPARENT), sub(" ", "0", sprintf("%\u00305s", COMPARENT)), COM) )
+##
+symdiff(epci2021.comp$CODGEO, commune2021$COM1)
+```
+
+Il n'y a donc plus de différences entre les univers des deux clefs. On peut donc fusionner les deux tables en réalisant une jointure simple:
+
+```{r,eval=TRUE}
+##
+commepci2021 <- merge(commune2021, epci2021.comp, by.x= 'COM1', by.y='CODGEO', suffixes = c(".comm", ".epci"))
+```
+
+
 Comme souligné lors de la présentation de lundi, 
 il faut donc toujours faire attention au découpage dans lequel les informations à la commune sont diffusées.
-
-
 
 ## Fonctions de hachage
 
@@ -405,7 +430,7 @@ et à illustrer leur fonctionnement en pratique.
 
 
 Comme expliqué dans la présentation, les fonctions de hachage ont pour objet de transformer une séquence binaire en nombre 
-dans une plage prédéterminée pour s'en servir d'indexe. L'exemple de fonction utilisé est le suivant :
+dans une plage prédéterminée pour s'en servir d'index. L'exemple de fonction utilisé est le suivant :
 
 
 ``` {r}  
@@ -421,11 +446,12 @@ h <- function(x, sz, init=5381, M=33){
 
 ### Remarques à propos de la fonction
 
-Cette fonction de hachage est un classique du genre. Elle est notamment connue pour apparaître dans le _Red Dragon Book_
-qui est incunable de la littérature sur la conception des compilateurs. 
+Cette fonction de hachage est un classique du genre. Elle est notamment connue pour apparaître dans le 
+[_Red Dragon Book_](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools) 
+qui est un incunable de la littérature sur la conception des compilateurs. 
 
 Les paramètres par défaut sont la version de Bernstein mais d'autres choix sont possibles comme celle de Kernighan & Ritchie, deux des concepteurs du langage C, 
-(plus loin). Et, comme ils le disent, "This is not the best possible algorithm, but it has the merit of extreme simplicity". 
+(plus loin). Et, de leur aveu même, "This is not the best possible algorithm, but it has the merit of extreme simplicity". 
 
 Au de-là de son caractère vénérable, elle a été avant tout choisie car elle peut être facilement implémentée avec R. 
 De nombreuses autres fonctions existent ayant de bien meilleures propriétés mais elles auraient été beaucoup plus diffciles à implémenter ici.
@@ -453,7 +479,7 @@ un encodage pour l'indexation et un autre pour la recherche.
 
 On réalise de plus les calculs avec des flottants modulo (`%%`) 2^32 pour émuler les calculs avec des entiers non signé 32 bits. 
 En effet, R ne propose que des entiers _signés_ 32 bits qui donnerait des résultats différents. En outre, 
-le débordement par le haut qui est normal ici conduirait à la production de NA ce qui n'est clairement pas ce qu'on veut.
+le débordement par le haut qui est normal ici conduirait à la production de NA ce qui n'est clairement pas le résultat attendu.
 
 ``` {r}  
 ## débordement d'entier par le haut
@@ -488,7 +514,7 @@ Ce qui peut être illustré avec une variante de la fonction, la version Kernigh
 hcom <- sapply(commune2021$LIBELLE, function(x)h(x, 37742, 0, 31))
 ```
 
-Pas besoin de faire un test du Khi^2 pour voir que la distribution est n'est pas tout à fait uniforme. 
+Pas besoin de faire un test du Khi^2 pour voir que la distribution n'est pas tout à fait uniforme. 
 
 ``` {r}
 (frq <- table(table(hcom)))
@@ -501,7 +527,7 @@ nrow(commune2021)-frq[1]
 prop.table(table(match(1:nrow(commune2021), hcom,0)!=0))
 ```
 
-En conséquence de quoi, L'Abergement-Clémenciat à la même index que Gueugnon
+En conséquence de quoi, L'Abergement-Clémenciat à la même indice que Gueugnon
 
 ``` {r}  
 which(hcom==hcom[1])
@@ -515,7 +541,7 @@ htab[h("L'Abergement-Clémenciat", 37742)]
 
 retourne donc "71230" au lieu de "01001".
 
-Pour réduire le nombre de clefs ayant le même index, on peut commencer par doubler la capacité de la table, 
+Pour réduire le nombre de clefs ayant le même indice, on peut commencer par doubler la capacité de la table, 
 
 ``` {r}  
 hcom <- sapply(commune2021$LIBELLE, function(x)h(x, 37742*2, 0, 31))

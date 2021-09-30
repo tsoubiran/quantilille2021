@@ -115,6 +115,7 @@ Clic droit sur la couche à laquelle on veut appliquer le même style > Styles >
 ### Intégration de données de sources diverses
 
 #### Flux WMS/WFS : 
+
 Pour l'instant, nous avons à chaque fois télécharger en local sur notre ordinateur des fichiers de données, que nous avons ensuite affiché dans le logiciel QGIS. Il est possible d'afficher et de traiter des données dans QGIS de manière distante, en se connectant à une base de données ou à des flux web. Ces flux web peuvent être des Web Map Service (WMS), Web Map Tile Service (WMTS ou Web Tile Service (WTS); ce sont des données en mode raster qui sont utiles pour servir de fond de carte par exemple. Il y a également des Web Feature Service (WFS) pour des données en mode vecteurs, qui sont intérogeables objet par objet, comme une couche vecteur classique.
 Nous allons afficher des données à travers des flux WSM dans QGIS : 
 
@@ -132,6 +133,7 @@ Ressources pour trouver des flux WMS/WFS :
 * Une liste de ressources pour des flux WMS/WFS : <https://georezo.net/wiki/main/webmapping/webservices>
 
 #### OSM
+
 QGIS offre un accès direct aux données contenues dans la base de données d'OpenStreetMap que vous pouvez charger directement dans votre projet QGIS, en mode vecteur. Pour cela il faut activer une extension spécifique (les extensions sont des options/outils supplémentaires non-activités par defaut) : QuickOSM.
 
 ```Extenstions dans le menu supérieur > Installer/gérer les extensions > rechercher QuickOSM > Sélectionner QuickOSM > cliquer sur Installer le plugin
